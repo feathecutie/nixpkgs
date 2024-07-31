@@ -519,7 +519,7 @@ rec {
     type = (with lib.types; let
       # https://github.com/kdl-org/kdl/blob/main/SPEC.md#value
       untypedKdlValue = (nullOr (oneOf [ str bool number ])) // { description = "KDL value"; };
-      kdlValue = (either untypedKdlValue (submodule {
+      kdlValue = either untypedKdlValue ((submodule {
         options = {
           type = lib.mkOption {
             type = nullOr str;
@@ -536,7 +536,7 @@ rec {
             '';
           };
         };
-      })) // { description = "KDL value with optional type annotation"; };
+      }) // { description = "submodule: { type = /* type annotation */; value = /* KDL value */; }"; });
       node = submoduleWith {
         modules = lib.toList {
           options = {
