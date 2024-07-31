@@ -114,20 +114,28 @@ have a predefined type and string generator already declared under
     and returning a set with [KDL](https://kdl.dev/)-specific attributes `type`,
     `lib` and `generate` as specified [below](#pkgs-formats-result).
 
-    `lib` is a set containing a single function `node`, which is a helper
-    function indended to facilitate generating the required structure for pkgs.formats.kdl
+    `lib` is a set containing the functions `node` and `typed`, which are helper
+    functions indended to facilitate generating the required structure for pkgs.formats.kdl
     in an ergonomic way.
 
-    Its signature is as follows:
+    Their signatures are as follows:
+
+    `node`:
 
     ```nix
-    identifier: arguments: properties: children: { inherit identifier arguments properties children; };
+    name: type: arguments: properties: children: { inherit name type arguments properties children; };
+    ```
+
+    `typed`:
+
+    ```nix
+    type: value: { inherit type value; };
     ```
 
     This allows writing the KDL node
 
     ```kdl
-    name "arg1" "arg2" prop=1 {
+    name "arg1" (special-type)"arg2" prop=1 {
       child
     }
     ```
@@ -135,8 +143,8 @@ have a predefined type and string generator already declared under
     as
 
     ```nix
-    (node "name" [ "arg1" "arg2" ] { prop = 1; } [
-      (node "child" [ ] { } [ ])
+    (node "name" null [ "arg1" (typed "special-type" "arg2") ] { prop = 1; } [
+      (node "child" null [ ] { } [ ])
     ])
     ```
 
@@ -144,12 +152,18 @@ have a predefined type and string generator already declared under
 
     ```nix
     {
-      identifier = "name";
-      arguments = [ "arg1" "arg2" ];
+      name = "name";
+      arguments = [
+        "arg1"
+        {
+          type = "special-type";
+          value = "arg2";
+        }
+      ];
       properties = { prop = 1; };
       children = [
         {
-          identifier = "child";
+          name = "child";
         }
       ];
     }

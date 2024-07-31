@@ -518,14 +518,40 @@ rec {
 
     type = (with lib.types; let
       # https://github.com/kdl-org/kdl/blob/main/SPEC.md#value
-      kdlValue = (nullOr (oneOf [ str bool number ])) // { description = "KDL value"; };
+      untypedKdlValue = (nullOr (oneOf [ str bool number ])) // { description = "KDL value"; };
+      kdlValue = (either untypedKdlValue (submodule {
+        options = {
+          type = lib.mkOption {
+            type = nullOr str;
+            default = null;
+            description = ''
+              [Type Annotation](https://github.com/kdl-org/kdl/blob/main/SPEC.md#type-annotation) of the value.
+              Set to `null` to prevent generating a type annotation.
+            '';
+          };
+          value = lib.mkOption {
+            type = untypedKdlValue;
+            description = ''
+              The actual KDL value.
+            '';
+          };
+        };
+      })) // { description = "KDL value with optional type annotation"; };
       node = submoduleWith {
         modules = lib.toList {
           options = {
-            identifier = lib.mkOption {
+            name = lib.mkOption {
               type = str;
               description = ''
-                [Identifier](https://github.com/kdl-org/kdl/blob/main/SPEC.md#identifier) of [KDL node](https://github.com/kdl-org/kdl/blob/main/SPEC.md#node).
+                Name of [KDL node](https://github.com/kdl-org/kdl/blob/main/SPEC.md#node).
+              '';
+            };
+            type = lib.mkOption {
+              type = nullOr str;
+              default = null;
+              description = ''
+                [Type Annotation](https://github.com/kdl-org/kdl/blob/main/SPEC.md#type-annotation) of [KDL node](https://github.com/kdl-org/kdl/blob/main/SPEC.md#node).
+                Set to `null` to prevent generating a type annotation.
               '';
             };
             arguments = lib.mkOption {
@@ -573,17 +599,20 @@ rec {
           inherit (settingsFormat.lib) node;
         in
         settingsFormat.generate "sample.kdl" [
-          (node "foo" [ ] { } [
-            (node "bar" [ "baz" ] { a = 1; } [ ])
+          (node "foo" null [ ] { } [
+            (node "bar" null [ "baz" ] { a = 1; } [ ])
           ])
         ]
         ```
 
         # Arguments
 
-        identifier
-        : The identifier of the node, represented by a string
+        name
+        : The name of the node, represented by a string
 
+        type
+        : The type annotation of the node, represented by a string, or null to avoid generating a type annotation
+  
         arguments
         : The arguments of the node, represented as a list of KDL values
 
@@ -594,7 +623,18 @@ rec {
         : The children of the node, represented as a list of nodes
 
       */
-      node = identifier: arguments: properties: children: { inherit identifier arguments properties children; };
+      node = name: type: arguments: properties: children: { inherit name type arguments properties children; };
+
+      /**
+        Helper function for generting the format of a typed value as expected by pkgs.formats.kdl
+
+        type
+        : The type of the value, represented by a string
+
+        value
+        : The value itself
+      */
+      typed = type: value: { inherit type value; };
     };
 
     generate = name: value: pkgs.callPackage ({ runCommand, json2kdl }: runCommand name {
