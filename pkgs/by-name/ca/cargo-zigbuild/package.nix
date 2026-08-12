@@ -4,6 +4,7 @@
   fetchFromGitHub,
   makeWrapper,
   zig,
+  apple-sdk,
   versionCheckHook,
   nix-update-script,
 }:
@@ -25,7 +26,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   postInstall = ''
     wrapProgram $out/bin/cargo-zigbuild \
-      --prefix PATH : ${zig}/bin
+      --prefix PATH : ${zig}/bin \
+      --set-default SDKROOT ${apple-sdk.src}
   '';
 
   doInstallCheck = true;
